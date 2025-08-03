@@ -1,8 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Literal
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # or ["*"] for all origins (not recommended for production)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Order(BaseModel):
     instrument: str
@@ -30,13 +39,13 @@ def create_trade(trade: Order):
     orders.append(trade)
     return "Successful sent order!"
 
-@app.get("/orders")
+@app.get("/orders", response_model=list[Order])
 def get_orders():
     if not orders:
         raise HTTPException(status_code=404, detail="No orders found.")
     return orders
 
-@app.get("/orders/{order_id}")
+@app.get("/orders/{order_id}", response_model=Order)
 def get_order(order_id: int):
     if order_id < 0 or order_id >= len(orders):
         raise HTTPException(status_code=404, detail="Order not found.")
