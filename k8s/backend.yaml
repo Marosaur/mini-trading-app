@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: minitradingapplication-backend:latest
+        imagePullPolicy: Never       # Use local image from Docker Desktop
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: postgresql://postgres:marvin123@postgres:5432/trading_app
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:17
+        command: ['sh', '-c', 'until pg_isready -h postgres -U postgres; do echo waiting for postgres; sleep 2; done']
+        env:
+        - name: PGPASSWORD
+          value: marvin123
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  type: NodePort
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30081
+  selector:
+    app: backend
